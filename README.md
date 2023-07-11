@@ -33,6 +33,8 @@ The tool will then prompt you for the necessary details to facilitate migration:
 
 Once all these details are filled in, the system will prompt you to select the group you wish to migrate. Upon selection, it will be created as a Community in Amity Social Cloud with its associated members, posts, comments, and reactions.
 
+![image](https://github.com/AmityCo/getsocial-migrator/assets/1589163/21c6a1c0-de57-45b1-b165-43ccb7e75611)
+
 ## ⚙️ Characteristics and Limitations
 
 The GetSocial Migrator tool operates under certain specifications and limitations that are crucial to understand:
