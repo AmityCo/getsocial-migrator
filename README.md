@@ -38,6 +38,7 @@ Once all these details are filled in, the system will prompt you to select the g
 The GetSocial Migrator tool operates under certain specifications and limitations that are crucial to understand:
 
 ### 📥 Migration Support
+- **Users Migration**: The migration tool operates on a group-by-group basis. Consequently, users who aren't associated with any group cannot be migrated.
 - **Approved Entities**: Only approved members and posts are migrated.
 - **Unsupported Entities**: Topic and poll posts aren't supported.
 - **Partial Migration**: Action buttons and mention data from GetSocial aren't migrated.
@@ -57,8 +58,6 @@ The GetSocial Migrator tool operates under certain specifications and limitation
 - **Supported Types**: Text, image, and video posts/comments are supported.
 - **Video-Image Posts**: Posts with both video and image are converted into videos only, with images dropped from the migration.
 - **Media Files Migration**: All images and videos in posts and comments are migrated and reuploaded to ASC.
-
-### 👥 User Roles
 - **Admin Posts Migration**: Posts and comments created by the GetSocial admin are migrated as created by the Admin that owns the ASC Admin token.
 
 ### ✔️ Idempotency
