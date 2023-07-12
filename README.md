@@ -50,6 +50,7 @@ The GetSocial Migrator tool operates under certain specifications and limitation
 ### 🔄 Metadata and Data Conversion
 - **Labels to Tags**: Labels from GetSocial are converted to tags in ASC.
 - **Auth Identities Migration**: The `authIdentities` of GetSocial users are migrated to metadata in ASC.
+- **User Properties**: User's public and private properties are migrated and merged into User's `metadata` object.
 - **Activities Properties Migration**: GetSocial activities' properties are transferred into the metadata of the corresponding object (post, comment) in ASC.
 
 ### 📸 User Profile Avatars
