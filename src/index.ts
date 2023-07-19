@@ -78,16 +78,29 @@ async function run() {
     const groupPrompt = new Select({
       name: 'groupSelect',
       message: 'Pick a group to perform migration on',
-      choices: groups.map(group => `${group.title.en} (${group.id})`)
+      choices: ["All Groups", ... groups.map(group => `${group.title.en} (${group.id})`)]
     });
     const selectedGroupLabel = await groupPrompt.run();
     // capture groupId from the last part of string inside () and trim it)
-    const arr = selectedGroupLabel.match(/\(([^)]+)\)/g);
-    const selectedGroupId = arr[arr.length-1].slice(1, -1);
-    const selectedGroup = groups.find(group => group.id === selectedGroupId) as GSGroup;
-    logger.debug(`Migrating group: ${selectedGroup.id}\n`);
-    await migrateGroup(migrationConfig, selectedGroup);
-    multibar.stop();
+    let selectedGroups = groups;
+    if(selectedGroupLabel !== "All Groups") {
+        const arr = selectedGroupLabel.match(/\(([^)]+)\)/g);
+        const selectedGroupId = arr[arr.length-1].slice(1, -1);
+        selectedGroups = [groups.find(group => group.id === selectedGroupId) as GSGroup];
+    }
+    logger.debug(`Migrating groups: ${selectedGroups.map(g=>g.id)}\n`);
+    for(let selectedGroup of selectedGroups){
+        logger.debug(`Migrating group: ${selectedGroup.id}`)
+        console.log(`Migrating group: ${selectedGroup.id}`)
+        await migrateGroup(migrationConfig, selectedGroup);
+        migrationConfig.multibar.stop();
+        migrationConfig.multibar = new cliProgress.MultiBar({
+            format: '{title}|{bar}| {percentage}% || {value}/{total} {unit}',
+            barCompleteChar: '\u2588',
+            barIncompleteChar: '\u2591',
+            hideCursor: true
+        }, cliProgress.Presets.shades_classic);
+    }
 }
 
 run().catch((error) => {

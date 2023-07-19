@@ -356,6 +356,39 @@ export async function migrateUser(mconfig: MigrationContext, user: GSUser) {
 
 }
 
+export async function followUser(mconfig: MigrationContext, user: GSUser, followTarget: string){
+    mconfig.logger.debug(`Adding Follow from ${user.id} to ${followTarget}\n`);
+    try {
+
+        const accessToken = await getUserAccessToken(mconfig, user);
+
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: `https://api.${mconfig.ascRegion}.amity.co/api/v4/me/following/${followTarget}`,
+            headers: {
+                'accept': 'application/json',
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json'
+            }
+        };
+        const resp = await limiter.schedule(() => axios.request(config));
+    }
+    catch (err) {
+        if (err instanceof AxiosError) {
+            // if error body.message is "Follow request is already accepted" then ignore
+            if (err?.response?.data?.message && err?.response?.data?.message.includes("already accepted")) {
+                mconfig.logger.debug(`Follow request from ${user.id} to ${followTarget} already exists, skipping\n`);
+                return;
+            }
+            mconfig.logger.error(`Error while migrating reaction: ${JSON.stringify(err?.response?.data, null, 2)}`);
+            console.error(err.response);
+        }
+        else throw err;
+    }
+
+}
+
 export async function migratePost(mconfig: MigrationContext, community: ASCCommunity, post: GSPost) {
     mconfig.logger.debug(`Migration post: ${post.id}\n`);
     try {

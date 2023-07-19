@@ -50,11 +50,13 @@ export type GSGroup = {
     };
 };
 
-export type GSArrayResponse<T> = {
-    total_number?: number;
+export interface GSArrayResponse<T>{
     data: T[];
     next_cursor?: string
 };
+export interface GSArrayResponseWithTotalNumber<T> extends GSArrayResponse<T> {
+    total_number: number
+}
 export type GSReactionArrayResponse = {
     reactions: GSReaction[];
     next_cursor?: string
@@ -131,6 +133,21 @@ export async function getGroups(mconfig: MigrationContext): Promise<GSGroup[]> {
         data: requestBody
     };
     const { data } = (await limiter.schedule(() =>  axios.request(config))).data as GSArrayResponse<GSGroup>;
+    return data;
+}
+
+export async function getUserFollowers(mconfig: MigrationContext, user: GSUser, cursor?: string){
+
+    let config = {
+        method: 'get',
+        maxBodyLength: Infinity,
+        url: `https://api.getsocial.im/v1/communities/followers?app_id=${mconfig.appId}&entity_type=user&entity_id=${user.id}&limit=10${cursor ? `&next_cursor=${cursor}` : ''}`,
+        headers: {
+            'X-GetSocial-API-Key': mconfig.apiKey,
+            'Content-Type': 'application/json'
+        }
+    };
+    const { data } = (await limiter.schedule(() =>  axios.request(config))).data as GSArrayResponseWithTotalNumber<GSUser>;
     return data;
 }
 

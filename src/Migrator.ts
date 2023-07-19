@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 
-import { GSArrayResponse, GSGroup, GSPost, GSUser, getGroupMembers, getGroupPosts, getPostComments, getPostReactions } from "./GetSocial";
-import { ASCCommunity, ASCConfig, ASCPost, ASCResponse, addUsersToCommunity, groupAlreadyExist, migrateComment, migrateGroupAsCommunity, migratePost, migrateReaction, migrateUser } from "./AmitySocialCloud";
+import { GSArrayResponse, GSGroup, GSPost, GSUser, getGroupMembers, getGroupPosts, getPostComments, getPostReactions, getUserFollowers } from "./GetSocial";
+import { ASCCommunity, ASCConfig, ASCPost, ASCResponse, addUsersToCommunity, followUser, groupAlreadyExist, migrateComment, migrateGroupAsCommunity, migratePost, migrateReaction, migrateUser } from "./AmitySocialCloud";
 import * as cliProgress from 'cli-progress';
 export interface MigrationContext extends ASCConfig {
     appId: string;
@@ -138,16 +138,30 @@ async function migrateMembers(mconfig: MigrationContext, group: GSGroup, communi
     mconfig.logger.debug(`Migrating ${group.members_count} users from group ${group.id}`);
     const userMigrateProgressBar = mconfig.multibar.create(group.members_count, 0);
     const userJoinProgressBar = mconfig.multibar.create(group.members_count, 0);
+    const userFollowProgressBar = mconfig.multibar.create(0, 0);
     userMigrateProgressBar.update(0, { title: 'Migrating Users', "unit": "users" });
     userJoinProgressBar.update(0, { title: 'Joining Users', "unit": "users" });
+    userFollowProgressBar.update(0, { title: 'Following Users', "unit": "users" });
     let memberData = null;
     while (!memberData || memberData?.next_cursor) {
         memberData = await getGroupMembers(mconfig.appId, mconfig.apiKey, group.id, memberData?.next_cursor);
         const members = memberData.data;
         await Promise.all(members.map(async member => {
             // Migrate user
-            const user = await migrateUser(mconfig, member.user);
+            const ascUser = await migrateUser(mconfig, member.user);
             userMigrateProgressBar.increment();
+            const followers = await getUserFollowers(mconfig, member.user);
+            userMigrateProgressBar.setTotal(userMigrateProgressBar.getTotal() + followers.length);
+            userFollowProgressBar.setTotal(userFollowProgressBar.getTotal() + followers.length);
+            await Promise.all(followers.map(async follower => {
+                await migrateUser(mconfig, follower);
+                userMigrateProgressBar.increment();
+            }));
+            await Promise.all(followers.map(async follower => {
+                await followUser(mconfig, member.user, follower.id);
+                userFollowProgressBar.increment();
+            }));
+
         }));
         await addUsersToCommunity(mconfig, community.communityId, members.map(member => member.user.id));
         userJoinProgressBar.increment(members.length);
