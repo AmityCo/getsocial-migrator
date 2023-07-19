@@ -67,6 +67,7 @@ async function migratePosts(mconfig: MigrationContext, group: GSGroup, community
         await Promise.all(posts.map(async post => {
             // Migrate user
             const ascPost = await migratePost(mconfig, community, post);
+            mconfig.logger.debug("ASCPOST: "+JSON.stringify(ascPost));
             if (!ascPost) {
                 mconfig.logger.error("Error migrating post " + post.id + " from group " + group.id + ". Skipping.");
                 return;
@@ -100,6 +101,7 @@ async function migrateReactions(mconfig: MigrationContext, reactionMigrateProgre
         const reactions = reactionData.reactions;
         await Promise.all(reactions.map(async reaction => {
             // Migrate reaction
+            mconfig.logger.debug("REACTION: "+JSON.stringify(reaction));
             await migrateReaction(mconfig, reaction.author.user, ascPost, reaction.reactions[0]);
             reactionMigrateProgressBar.increment();
         }));

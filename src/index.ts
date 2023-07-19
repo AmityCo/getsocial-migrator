@@ -91,7 +91,7 @@ async function run() {
 }
 
 run().catch((error) => {
-    logger.error(error);
+    logger.error((error as Error).stack);
 });
 
 // migrateImage("https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_16x9.jpg?w=1200", "a4c800603b5748570d526f5a2a03ecfd77ff3d70");

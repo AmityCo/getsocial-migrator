@@ -185,7 +185,7 @@ export async function groupAlreadyExist(mconfig: MigrationContext, groupId: stri
         if (err instanceof AxiosError) {
             mconfig.logger.error(`Error checking if group ${groupId} exists in ASC: ${JSON.stringify(err?.response?.data, null, 2)}`);
         }
-        else mconfig.logger.error(err);
+        else mconfig.logger.error((err as Error).stack);
         throw err;
     }
 
@@ -213,7 +213,7 @@ export async function postAlreadyExists(mconfig: MigrationContext, targetType: s
         if (err instanceof AxiosError) {
             console.log(`Error checking if post ${gsPostId} exists in ASC: ${JSON.stringify(err?.response?.data, null, 2)}`);
         }
-        else mconfig.logger.error(err);
+        else mconfig.logger.error((err as Error).stack);
         throw err;
     }
 
@@ -435,7 +435,7 @@ export async function migratePost(mconfig: MigrationContext, community: ASCCommu
         const resp = await limiter.schedule(() => axios.request(config));
     }
     catch (err) {
-
+        mconfig.logger.error("Error: "+(err as Error).stack);
         if (err instanceof AxiosError && err?.response?.data) {
             mconfig.logger.error(`Error while migrating post:`, err?.response?.data);
         }
@@ -443,11 +443,11 @@ export async function migratePost(mconfig: MigrationContext, community: ASCCommu
     }
 }
 export async function migrateReaction(mconfig: MigrationContext, user: GSUser, post: ASCPost, reaction: string) {
-    mconfig.logger.debug(`Migrating reaction of postId: ${post.postId}, reaction: ${reaction} from userId: ${user.id}\n`);
+    mconfig.logger.debug(`Migrating reaction of postId: ${post.postId}\n`);
     try {
 
-        const accessToken = await getUserAccessToken(mconfig, user);
-
+        const accessToken = user ? (await getUserAccessToken(mconfig, user)) : mconfig.ascAdminToken;
+        
         const data = JSON.stringify({
             "referenceId": post.postId,
             "referenceType": "post",
