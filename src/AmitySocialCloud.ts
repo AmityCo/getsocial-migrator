@@ -6,11 +6,11 @@ import Bottleneck from "bottleneck";
 import { MigrationContext } from "./Migrator";
 const pipeline = promisify(stream.pipeline);
 
-
+const migratedUserIds = new Map<string, boolean>();
 const FormData = require('form-data')
 const limiter = new Bottleneck({
-    maxConcurrent: 10,
-    minTime: 1000
+    maxConcurrent: Number(process.env.ASC_MAX_CONCURRENT) || 10,
+    minTime: 1000 / (Number(process.env.ASC_REQUEST_PER_SECOND) || 10)
 });
 export type ASCAttachment = { fileId: string, type: 'image' | 'video' }
 export type ASCConfig = {
@@ -315,6 +315,10 @@ export async function getUserAccessToken(mconfig: ASCConfig, user: GSUser): Prom
 
 }
 export async function migrateUser(mconfig: MigrationContext, user: GSUser) {
+    if(migratedUserIds.has(user.id)) {
+        mconfig.logger.debug("User already migrated: ", user.id);
+        return;
+    }
     mconfig.logger.debug("Migration user: ", user);
     try {
         await getUserAccessToken(mconfig, user);
@@ -344,12 +348,13 @@ export async function migrateUser(mconfig: MigrationContext, user: GSUser) {
 
         const userUpdateResponse = (await axios.put(`https://api.${mconfig.ascRegion}.amity.co/api/v3/users`,
             userUpdateRequest, { headers })).data as ASCResponse;
-        return userUpdateResponse.users.find(u => u.userId === user.id);
+        userUpdateResponse.users.find(u => u.userId === user.id);
+        migratedUserIds.set(user.id, true);
     }
     catch (err) {
 
         if (err instanceof AxiosError) {
-            mconfig.logger.error(`Error while migrating user: ${JSON.stringify(err?.response?.data, null, 2)}`);
+            mconfig.logger.error(`Error while migrating user: ${JSON.stringify(err?.response?.data, null, 2)} for user: ${user}`);
         }
         else throw err;
     }
@@ -511,6 +516,7 @@ export async function migrateReaction(mconfig: MigrationContext, user: GSUser, p
 
 }
 export async function migrateComment(mconfig: MigrationContext, user: GSUser, post: ASCPost, comment: GSComment) {
+    mconfig.logger.debug(`Migrating comment of postId: ${post.postId} and comment: ${JSON.stringify(comment, null, 2)}\n`);
     try {
         // migrate images and videos from content attachments and create attachments array with the returned fileIds
         let attachments: ASCAttachment[] = (await Promise.all(comment.content[0]?.attachments?.map(async (a) => {
@@ -550,7 +556,7 @@ export async function migrateComment(mconfig: MigrationContext, user: GSUser, po
             metadata['language'] = comment.content[0]?.language;
         }
 
-        const accessToken = await getUserAccessToken(mconfig, user);
+        const accessToken = user ? await getUserAccessToken(mconfig, user) : mconfig.ascAdminToken;
 
         const data = JSON.stringify({
             "referenceId": post.postId,
@@ -579,7 +585,7 @@ export async function migrateComment(mconfig: MigrationContext, user: GSUser, po
     catch (err) {
 
         if (err instanceof AxiosError) {
-            mconfig.logger.error(`Error while migrating user: ${JSON.stringify(err?.response?.data, null, 2)}`);
+            mconfig.logger.error(`Error while migrating comment: ${JSON.stringify(err?.response?.data, null, 2)}`);
         }
         else throw err;
     }
