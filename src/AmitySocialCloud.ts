@@ -471,6 +471,7 @@ export async function migratePost(mconfig: MigrationContext, community: ASCCommu
         };
         mconfig.logger.debug("Creating post " + post.id + '\n')
         const resp = await limiter.schedule(() => axios.request(config));
+        return resp
     }
     catch (err) {
         mconfig.logger.error("Error: "+(err as Error).stack);
