@@ -3,8 +3,8 @@ import { MigrationContext } from "./Migrator";
 import Bottleneck from "bottleneck";
 
 const limiter = new Bottleneck({
-    maxConcurrent: 1,
-    minTime: 1000
+    maxConcurrent: Number(process.env.GETSOCIAL_MAX_CONCURRENT) || 10,
+    minTime: 1000 / (Number(process.env.GETSOCIAL_REQUEST_PER_SECOND) || 10)
 });
 export interface GSUserMembership {
     membership: GSMembership;

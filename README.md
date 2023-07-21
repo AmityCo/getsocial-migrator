@@ -45,7 +45,7 @@ The GetSocial Migrator tool operates under certain specifications and limitation
 - **Unsupported Entities**: Topic and poll posts aren't supported.
 - **Partial Migration**: Action buttons and mention data from GetSocial aren't migrated.
 - **Unsupported Reactions**: Reactions on comments aren't supported.
-- **Unsupported Comment Replies**: Multi-level comment replies using `target` aren't migrated.
+- **Unsupported Comments**: Multi-level comment replies using `target` and admin comments aren't migrated.
 - **Followers Migration**: Followers are migrated along with all follow relationships of any group members being migrated.
 - **Follow Relation Group**: Follow relation group (users who follow group instead of joining group) is not migrated.
 

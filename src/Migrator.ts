@@ -124,8 +124,9 @@ async function migrateComments(mconfig: MigrationContext, commentMigrateProgress
                 mconfig.logger.debug("Skipping comment " + comment.id + " from post " + gsPost.id + " because it already exists in ASC\n");
             }
             else {
-                // Migrate comment
-                await migrateComment(mconfig, comment.author.user, ascPost, comment);
+                // Migrate non-admin comment
+                if(comment.author.user) await migrateComment(mconfig, comment.author.user, ascPost, comment);
+                else mconfig.logger.debug("Skipping comment " + comment.id + " from post " + gsPost.id + " because it is an admin comment\n");
             }
             commentMigrateProgressBar.increment();
         }
@@ -148,7 +149,7 @@ async function migrateMembers(mconfig: MigrationContext, group: GSGroup, communi
         const members = memberData.data;
         await Promise.all(members.map(async member => {
             // Migrate user
-            const ascUser = await migrateUser(mconfig, member.user);
+            await migrateUser(mconfig, member.user);
             userMigrateProgressBar.increment();
             const followers = await getUserFollowers(mconfig, member.user);
             userMigrateProgressBar.setTotal(userMigrateProgressBar.getTotal() + followers.length);
